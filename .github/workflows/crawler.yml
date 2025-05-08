@@ -1,0 +1,44 @@
+name: Full Page Crawler Every 10 Minutes
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # Every 10 minutes
+  workflow_dispatch:        # Optional manual trigger
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Puppeteer dependencies
+        run: |
+          sudo apt-get install -y libxss1 libasound2 libnss3 libatk1.0-0 libx11-xcb1
+
+      - name: Install Puppeteer
+        run: |
+          npm install puppeteer
+
+      - name: Run Puppeteer Script to load page fully
+        run: |
+          node -e "
+            const puppeteer = require('puppeteer');
+
+            (async () => {
+              const browser = await puppeteer.launch({ headless: true });
+              const page = await browser.newPage();
+
+              // Loop to send 3 requests
+              for (let i = 0; i < 3; i++) {
+                await page.goto('https://its-rex.onrender.com', { waitUntil: 'networkidle2' });
+                console.log(\`[Request \${i+1}] Fully Loaded\`);
+                await new Promise(r => setTimeout(r, 2000)); // wait 2 seconds before the next
+              }
+
+              await browser.close();
+            })();
+          "
